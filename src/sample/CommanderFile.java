@@ -41,7 +41,7 @@ public class CommanderFile {
     }
 
     public String getDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
         return dateFormat.format(file.lastModified());
     }
 
