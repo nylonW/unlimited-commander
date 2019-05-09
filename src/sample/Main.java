@@ -110,7 +110,11 @@ public class Main extends Application {
         leftListView.getColumns().addAll(nameColumnLeft, dateColumnLeft);
         rightListView.getColumns().addAll(nameColumnRight, dateColumnRight);
 
-        File folder = new File("C:/");
+        var defaultPath = "C:/";
+        if (!OsUtils.isWindows()) {
+            defaultPath = "/Users/";
+        }
+        File folder = new File(defaultPath);
         currentPathLeft = folder.getAbsolutePath();
         currentPathRight = folder.getAbsolutePath();
 
