@@ -1,14 +1,14 @@
 package sample;
 
-public class OsUtils {
+class OsUtils {
     private static String OS = null;
 
-    public static String getOsName() {
+    private static String getOsName() {
         if(OS == null) { OS = System.getProperty("os.name"); }
         return OS;
     }
 
-    public static boolean isWindows() {
+    static boolean isWindows() {
         return getOsName().startsWith("Windows");
     }
 }

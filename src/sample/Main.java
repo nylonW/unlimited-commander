@@ -69,6 +69,7 @@ public class Main extends Application {
 
         TableColumn<CommanderFile, String> nameColumnRight = new TableColumn<>("Name");
         nameColumnRight.setCellValueFactory(new PropertyValueFactory<>("name"));
+
         TableColumn<CommanderFile, String> dateColumnRight = new TableColumn<>("Date");
         dateColumnRight.setCellValueFactory(new PropertyValueFactory<>("date"));
 
@@ -139,43 +140,33 @@ public class Main extends Application {
         }
 
         if (isLeft) {
-            currentPathLeft = file.getAbsolutePath();
-            itemsLeft.clear();
-            for (File listOfFile : listOfFiles) {
-                if (listOfFile.isFile()) {
-                    System.out.println("File " + listOfFile.getName());
-                    itemsLeft.add(new CommanderFile(listOfFile)); //"\uD83D\uDDC4 " + listOfFile.getName());
-
-                } else if (listOfFile.isDirectory()) {
-                    System.out.println("Directory " + listOfFile.getName());
-                    itemsLeft.add(new CommanderFile(listOfFile)); //"\uD83D\uDCC1 " + listOfFile.getName());
-                }
-            }
-            if (file.getParentFile() != null) {
-                itemsLeft.set(0, new CommanderFile(file.getParentFile(), "⬅ .."));
-            }
-
-            tableView.setItems(itemsLeft);
+            currentPathLeft = setupFileTree(tableView, listOfFiles, file, itemsLeft);
         } else {
-            currentPathRight = file.getAbsolutePath();
-            itemsRight.clear();
-            for (File listOfFile : listOfFiles) {
-                if (listOfFile.isFile()) {
-                    System.out.println("File " + listOfFile.getName());
-                    itemsRight.add(new CommanderFile(listOfFile)); //"\uD83D\uDDC4 " + listOfFile.getName());
-
-                } else if (listOfFile.isDirectory()) {
-                    System.out.println("Directory " + listOfFile.getName());
-                    itemsRight.add(new CommanderFile(listOfFile)); //"\uD83D\uDCC1 " + listOfFile.getName());
-                }
-            }
-            if (file.getParentFile() != null) {
-                itemsRight.set(0, new CommanderFile(file.getParentFile(), "⬅ .."));
-            }
-            tableView.setItems(itemsRight);
+            currentPathRight = setupFileTree(tableView, listOfFiles, file, itemsRight);
         }
         pathFieldLeft.setText(currentPathLeft);
         pathFieldRight.setText(currentPathRight);
+    }
+
+    private String setupFileTree(TableView<CommanderFile> tableView, List<File> listOfFiles, File file, ObservableList<CommanderFile> itemList) {
+        itemList.clear();
+        for (File listOfFile : listOfFiles) {
+            if (listOfFile.isFile()) {
+                System.out.println("File " + listOfFile.getName());
+                itemList.add(new CommanderFile(listOfFile)); //"\uD83D\uDDC4 " + listOfFile.getName());
+
+            } else if (listOfFile.isDirectory()) {
+                System.out.println("Directory " + listOfFile.getName());
+                itemList.add(new CommanderFile(listOfFile)); //"\uD83D\uDCC1 " + listOfFile.getName());
+            }
+        }
+        if (file.getParentFile() != null) {
+            itemList.set(0, new CommanderFile(file.getParentFile(), "⬅ .."));
+        }
+
+        tableView.setItems(itemList);
+
+        return file.getAbsolutePath();
     }
 
     public static void main(String[] args) {
