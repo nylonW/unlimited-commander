@@ -20,9 +20,13 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.FileHandler;
 
 public class Main extends Application {
 
@@ -109,12 +113,11 @@ public class Main extends Application {
             };
 
             cell.setOnDragDetected(event -> {
-                if (! cell.isEmpty()) {
+                if (!cell.isEmpty()) {
                     Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
                     ClipboardContent cc = new ClipboardContent();
                     System.out.println("Cell row index: " + cell.getItem().getName());
                     cc.putString(cell.getItem().getFile().getAbsolutePath());
-                    System.out.println(cc.getString());
                     db.setContent(cc);
                     dragSource.set(cell);
                 }
@@ -128,7 +131,7 @@ public class Main extends Application {
                 }
             });
 
-           cell.setOnDragDone(event -> System.out.println(dragSource.get().getItem().getName()));
+           //cell.setOnDragDone(event -> System.out.println(dragSource.get().getItem().getName()));
 
             return cell ;
         });
@@ -142,11 +145,10 @@ public class Main extends Application {
             };
 
             cell.setOnDragDetected(event -> {
-                if (! cell.isEmpty()) {
+                if (!cell.isEmpty()) {
                     Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
                     ClipboardContent cc = new ClipboardContent();
                     cc.putString(cell.getItem().getFile().getAbsolutePath());
-                    System.out.println(cc.getString());
                     db.setContent(cc);
                     dragSource.set(cell);
                 }
@@ -165,10 +167,29 @@ public class Main extends Application {
             return cell;
         });
 
-        rightListView.setOnDragOver(event -> {
-                event.acceptTransferModes(TransferMode.ANY);
-                event.consume();
-            });
+
+
+        rightListView.setOnDragDropped(event -> {
+            event.acceptTransferModes(TransferMode.ANY);
+            event.consume();
+
+            try {
+                Files.copy(dragSource.get().getItem().getFile().toPath(), new File(currentPathRight + "/" + dragSource.get().getItem().getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        leftListView.setOnDragDropped(event -> {
+            event.acceptTransferModes(TransferMode.ANY);
+            event.consume();
+            FileHandler.copy("");
+            try {
+                Files.copy(dragSource.get().getItem().getFile().toPath(), new File(currentPathLeft + "/" + dragSource.get().getItem().getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
 
         leftListView.getColumns().addAll(nameColumnLeft, dateColumnLeft);
         rightListView.getColumns().addAll(nameColumnRight, dateColumnRight);
