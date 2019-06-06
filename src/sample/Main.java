@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class Main extends Application {
             if (k.getCode().toString().equals("F7")) {
                 createNewFolderIn(currentPathLeft, true);
             } else if (k.getCode().toString().equals("F8")) {
-                deleteSelectedItem(rightListView, false);
+                deleteSelectedItem(leftListView, true);
             }
         });
         leftListView.setOnMouseClicked(event -> {
@@ -94,102 +95,15 @@ public class Main extends Application {
         TableColumn<CommanderFile, String> dateColumnLeft = new TableColumn<>("Date");
         setupColumns(nameColumnLeft, dateColumnLeft);
 
-
         TableColumn<CommanderFile, String> nameColumnRight = new TableColumn<>("Name");
         TableColumn<CommanderFile, String> dateColumnRight = new TableColumn<>("Date");
         setupColumns(nameColumnRight, dateColumnRight);
 
-        List<TableView<CommanderFile>> listList = new ArrayList<>();
-        listList.add(leftListView);
-        listList.add(rightListView);
+        setupDragAndDrop(leftListView);
+        setupDragAndDrop(rightListView);
 
-
-        leftListView.setRowFactory(lv -> {
-            TableRow<CommanderFile> cell = new TableRow<>(){
-                @Override
-                public void updateItem(CommanderFile item , boolean empty) {
-                    super.updateItem(item, empty);
-                }
-            };
-
-            cell.setOnDragDetected(event -> {
-                if (!cell.isEmpty()) {
-                    Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
-                    ClipboardContent cc = new ClipboardContent();
-                    System.out.println("Cell row index: " + cell.getItem().getName());
-                    cc.putString(cell.getItem().getFile().getAbsolutePath());
-                    db.setContent(cc);
-                    dragSource.set(cell);
-                }
-            });
-
-            cell.setOnDragOver(event -> {
-                Dragboard db = event.getDragboard();
-                if (db.hasString()) {
-                    event.acceptTransferModes(TransferMode.ANY);
-
-                }
-            });
-
-           //cell.setOnDragDone(event -> System.out.println(dragSource.get().getItem().getName()));
-
-            return cell ;
-        });
-
-        rightListView.setRowFactory(lv -> {
-            TableRow<CommanderFile> cell = new TableRow<>() {
-                @Override
-                public void updateItem(CommanderFile item , boolean empty) {
-                    super.updateItem(item, empty);
-                }
-            };
-
-            cell.setOnDragDetected(event -> {
-                if (!cell.isEmpty()) {
-                    Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
-                    ClipboardContent cc = new ClipboardContent();
-                    cc.putString(cell.getItem().getFile().getAbsolutePath());
-                    db.setContent(cc);
-                    dragSource.set(cell);
-                }
-            });
-
-            cell.setOnDragOver(event -> {
-                Dragboard db = event.getDragboard();
-                if (db.hasString()) {
-                    event.acceptTransferModes(TransferMode.ANY);
-
-                }
-            });
-
-            // cell.setOnDragDone(event -> leftListView.getItems().remove(cell.getItem()));
-
-            return cell;
-        });
-
-
-
-        rightListView.setOnDragDropped(event -> {
-            event.acceptTransferModes(TransferMode.ANY);
-            event.consume();
-
-            try {
-                Files.copy(dragSource.get().getItem().getFile().toPath(), new File(currentPathRight + "/" + dragSource.get().getItem().getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        leftListView.setOnDragDropped(event -> {
-            event.acceptTransferModes(TransferMode.ANY);
-            event.consume();
-            FileHandler.copy("");
-            try {
-                Files.copy(dragSource.get().getItem().getFile().toPath(), new File(currentPathLeft + "/" + dragSource.get().getItem().getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        setOnDragDropped(leftListView, true);
+        setOnDragDropped(rightListView, false);
 
         leftListView.getColumns().addAll(nameColumnLeft, dateColumnLeft);
         rightListView.getColumns().addAll(nameColumnRight, dateColumnRight);
@@ -216,14 +130,76 @@ public class Main extends Application {
         setupListView(rightListView, false, folder);
     }
 
-    private void deleteSelectedItem(TableView<CommanderFile> listView, boolean left) {
-        listView.getSelectionModel().getSelectedItem().getFile().delete();
+    private void setupDragAndDrop(TableView<CommanderFile> tableView) {
+        tableView.setRowFactory(lv -> {
+            TableRow<CommanderFile> cell = new TableRow<>(){
+                @Override
+                public void updateItem(CommanderFile item , boolean empty) {
+                    super.updateItem(item, empty);
+                }
+            };
 
-        if (left) {
-            setupListView(leftListView, true, new File(currentPathLeft));
-        } else {
-            setupListView(rightListView, false, new File(currentPathRight));
+            cell.setOnDragDetected(event -> {
+                if (!cell.isEmpty()) {
+                    Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.putString(cell.getItem().getFile().getAbsolutePath());
+                    db.setContent(cc);
+                    dragSource.set(cell);
+                }
+            });
+
+            cell.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasString()) {
+                    event.acceptTransferModes(TransferMode.ANY);
+
+                }
+            });
+
+            return cell ;
+        });
+    }
+
+    private void setOnDragDropped(TableView<CommanderFile> leftListView, boolean left) {
+        leftListView.setOnDragDropped(event -> {
+            event.acceptTransferModes(TransferMode.ANY);
+            event.consume();
+
+            String currentPath;
+            if (left) {
+                currentPath = currentPathLeft;
+            } else {
+                currentPath = currentPathRight;
+            }
+
+            File dragFile = dragSource.get().getItem().getFile();
+
+            try {
+                if (dragFile.isDirectory()) {
+                    FileUtils.copyDirectory(dragFile, new File(currentPath + "/" + dragFile.getName()));
+                } else {
+                    FileUtils.copyFile(dragFile, new File(currentPath + "/" + dragFile.getName()));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            refreshLists();
+        });
+    }
+
+    private void deleteSelectedItem(TableView<CommanderFile> listView, boolean left) {
+        try {
+            if (listView.getSelectionModel().getSelectedItem().getFile().isDirectory()) {
+                FileUtils.deleteDirectory(listView.getSelectionModel().getSelectedItem().getFile());
+            } else {
+                listView.getSelectionModel().getSelectedItem().getFile().delete();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        refreshLists();
     }
 
     private void createNewFolderIn(String path, boolean left) {
@@ -258,6 +234,12 @@ public class Main extends Application {
     private void setupColumns(TableColumn<CommanderFile, String> nameColumnLeft, TableColumn<CommanderFile, String> dateColumnLeft) {
         dateColumnLeft.setCellValueFactory(new PropertyValueFactory<>("date"));
         nameColumnLeft.setCellValueFactory(new PropertyValueFactory<>("name"));
+    }
+
+
+    private void refreshLists() {
+        setupListView(leftListView, true, new File(currentPathLeft));
+        setupListView(rightListView, false, new File(currentPathRight));
     }
 
     private void setupListView(TableView<CommanderFile> tableView, boolean isLeft, File file) {
