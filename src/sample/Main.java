@@ -1,6 +1,8 @@
 package sample;
 
 import javafx.application.Application;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
@@ -17,11 +19,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,11 +36,14 @@ public class Main extends Application {
     private TextField pathFieldRight;
     private Stage primaryStage;
 
-    TableView<CommanderFile> leftListView;
-    TableView<CommanderFile> rightListView;
+    private TableView<CommanderFile> leftListView;
+    private TableView<CommanderFile> rightListView;
+
+    private final ObjectProperty<TableRow<CommanderFile>> dragSource = new SimpleObjectProperty<>();
+
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         primaryStage.setTitle("Unlimited Commander by Marcin Slusarek");
         primaryStage.setScene(new Scene(root, 1000, 600));
@@ -94,40 +95,80 @@ public class Main extends Application {
         TableColumn<CommanderFile, String> dateColumnRight = new TableColumn<>("Date");
         setupColumns(nameColumnRight, dateColumnRight);
 
-//        leftListView.setOnDragDetected(e -> {
-//            String selected = leftListView.getSelectionModel().getSelectedItem().getFile().getAbsolutePath();
-//            Dragboard dragboard = leftListView.startDragAndDrop(TransferMode.ANY);
-//            ClipboardContent content = new ClipboardContent();
-//            dragboard.setContent(content);
-//            e.consume();
-//            e.setDragDetect(true);
-//        });
-//
-//        leftListView.setOnMousePressed(e -> {
-//            leftListView.setMouseTransparent(true);
-//            e.setDragDetect(true);
-//        });
-//
-//        leftListView.setOnMouseDragged(e -> {
-//            leftListView.setMouseTransparent(false);
-//            e.setDragDetect(false);
-//        });
-//
-//        leftListView.setOnDragOver(e -> {
-//            Dragboard dragboard = e.getDragboard();
-//            if (e.getDragboard().hasString()) {
-//                e.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-//            }
-//            e.consume();
-//        });
-//
-//        leftListView.setOnDragDropped(e -> {
-//            Dragboard dragboard = e.getDragboard();
-//            boolean success = false;
-//            if (e.getDragboard().hasString()) {
-//              String text = dragboard.getString();
-//            }
-//        });
+        List<TableView<CommanderFile>> listList = new ArrayList<>();
+        listList.add(leftListView);
+        listList.add(rightListView);
+
+
+        leftListView.setRowFactory(lv -> {
+            TableRow<CommanderFile> cell = new TableRow<>(){
+                @Override
+                public void updateItem(CommanderFile item , boolean empty) {
+                    super.updateItem(item, empty);
+                }
+            };
+
+            cell.setOnDragDetected(event -> {
+                if (! cell.isEmpty()) {
+                    Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
+                    ClipboardContent cc = new ClipboardContent();
+                    System.out.println("Cell row index: " + cell.getItem().getName());
+                    cc.putString(cell.getItem().getFile().getAbsolutePath());
+                    System.out.println(cc.getString());
+                    db.setContent(cc);
+                    dragSource.set(cell);
+                }
+            });
+
+            cell.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasString()) {
+                    event.acceptTransferModes(TransferMode.ANY);
+
+                }
+            });
+
+           cell.setOnDragDone(event -> System.out.println(dragSource.get().getItem().getName()));
+
+            return cell ;
+        });
+
+        rightListView.setRowFactory(lv -> {
+            TableRow<CommanderFile> cell = new TableRow<>() {
+                @Override
+                public void updateItem(CommanderFile item , boolean empty) {
+                    super.updateItem(item, empty);
+                }
+            };
+
+            cell.setOnDragDetected(event -> {
+                if (! cell.isEmpty()) {
+                    Dragboard db = cell.startDragAndDrop(TransferMode.ANY);
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.putString(cell.getItem().getFile().getAbsolutePath());
+                    System.out.println(cc.getString());
+                    db.setContent(cc);
+                    dragSource.set(cell);
+                }
+            });
+
+            cell.setOnDragOver(event -> {
+                Dragboard db = event.getDragboard();
+                if (db.hasString()) {
+                    event.acceptTransferModes(TransferMode.ANY);
+
+                }
+            });
+
+            // cell.setOnDragDone(event -> leftListView.getItems().remove(cell.getItem()));
+
+            return cell;
+        });
+
+        rightListView.setOnDragOver(event -> {
+                event.acceptTransferModes(TransferMode.ANY);
+                event.consume();
+            });
 
         leftListView.getColumns().addAll(nameColumnLeft, dateColumnLeft);
         rightListView.getColumns().addAll(nameColumnRight, dateColumnRight);
