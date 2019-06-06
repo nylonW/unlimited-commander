@@ -10,7 +10,7 @@ public class CommanderFile {
     private String date;
     private String size;
 
-    public CommanderFile(File file) {
+    CommanderFile(File file) {
         if (file.isDirectory()) {
             this.name = "\uD83D\uDCC1 " + file.getName();
         } else {
@@ -19,7 +19,7 @@ public class CommanderFile {
         this.file = file;
     }
 
-    public CommanderFile(File file, String name) {
+    CommanderFile(File file, String name) {
         this.name = name;
         this.file = file;
     }

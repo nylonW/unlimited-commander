@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/unlimitedCommander.iml" filepath="$PROJECT_DIR$/unlimitedCommander.iml" />
+      <module fileurl="file://$PROJECT_DIR$/unlimited-commander.iml" filepath="$PROJECT_DIR$/unlimited-commander.iml" />
     </modules>
   </component>
 </project>
